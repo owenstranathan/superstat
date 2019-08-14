@@ -30,11 +30,27 @@ import os
 import subprocess
 from pathlib import Path
 
-runtime = os.path.dirname(__file__)
+def is_child(path1, path2):
+    try:
+        return bool(path1.relative_to(path2))
+    except ValueError:
+        return False
+
+runtimepath = Path(os.path.dirname(__file__))
+pathsfile = runtimepath / ".superstatpaths"
+paths = []
+if (pathsfile.exists):
+    for pattern in pathsfile.open("r").read(). split('\n'):
+        if pattern.strip().startswith("#"):
+            continue
+        if pattern:
+            paths.append(Path(pattern))
 cwd: str = os.getcwd()
 path: Path
 for path in Path(cwd).glob("**/.git/"):
-    if(path.is_dir()):
+    blah = [is_child(path, p.parent) if "*" in str(p) else path.parent == p for p in paths]
+    ok = any(blah)
+    if path.is_dir() and (ok or not paths):
         parent: str = str(path.parent)
         proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=parent, shell=True)
         if proc.stdout:
