@@ -26,6 +26,8 @@ SOFTWARE.
 
 """
 
+# TODO: look for .superstatpaths in more places
+
 import os
 import subprocess
 from pathlib import Path
