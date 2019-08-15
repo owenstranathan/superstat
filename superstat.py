@@ -31,6 +31,7 @@ SOFTWARE.
 import os
 import subprocess
 from pathlib import Path
+from typing import List
 
 def is_child(path1, path2):
     try:
@@ -38,24 +39,33 @@ def is_child(path1, path2):
     except ValueError:
         return False
 
+def matches(path1, pathpattern):
+    return True
+
+def stat_dir(directory):
+    proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=directory, shell=True)
+    if proc.stdout:
+        print(" %s" % directory)
+        print("\t%s" % proc.stdout.decode())
+
+cwd: str = os.getcwd()
 runtimepath = Path(os.path.dirname(__file__))
 pathsfile = runtimepath / ".superstatpaths"
-paths = []
+pathpatterns = []
 if (pathsfile.exists):
     for pattern in pathsfile.open("r").read(). split('\n'):
         if pattern.strip().startswith("#"):
             continue
         if pattern:
-            paths.append(Path(pattern))
-cwd: str = os.getcwd()
-path: Path
-for path in Path(cwd).glob("**/.git/"):
-    blah = [is_child(path, p.parent) if "*" in str(p) else path.parent == p for p in paths]
-    ok = any(blah)
-    if path.is_dir() and (ok or not paths):
-        parent: str = str(path.parent)
-        proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=parent, shell=True)
-        if proc.stdout:
-            print(" %s" % parent)
-            print("\t%s" % proc.stdout.decode())
+            pathpatterns.append(pattern)
+if not pathpatterns:
+    pathpatterns = [cwd + "*"]  # If there are no settings then just look everywhere
+
+for pattern in pathpatterns:
+    if pattern.endswith("*"):
+        for path in Path(pattern).parent.glob("**/.git"):
+            if path.is_dir():
+                stat_dir(str(path.parent))
+    else:
+        stat_dir(pattern)
 
