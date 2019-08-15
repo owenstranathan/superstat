@@ -65,7 +65,7 @@ then add that directory to your Path
 1. press windows key
 2. type "path"
 3. click "Edit the system environment variables"
-4. click the butten labeled "Environemtn Variables.."
-5. Under "User variables for <you>", double click "Path"
+4. click the butten labeled "Environment Variables..."
+5. Under "User variables for USER", double click "Path"
 6. Click "New"
 7. In the text field that appears enter the path you cloned superstat to (in my case `D:\code\owenstranathan\superstat`)
