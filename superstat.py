@@ -43,10 +43,12 @@ def matches(path1, pathpattern):
     return True
 
 def stat_dir(directory):
-    proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=directory, shell=True)
+    # proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=directory, shell=True)
+    proc: subprocess.CompletedProcess = subprocess.run(["git", "status", "--short"], capture_output=True, cwd=directory, shell=True)
     if proc.stdout:
         print(" %s" % directory)
-        print("\t%s" % proc.stdout.decode())
+        for line in proc.stdout.decode().split("\n"):
+            print("\t%s" % line)
 
 cwd: str = os.getcwd()
 runtimepath = Path(os.path.dirname(__file__))
