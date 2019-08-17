@@ -32,6 +32,12 @@ import os
 import subprocess
 from pathlib import Path
 from typing import List
+from argparse import ArgumentParser
+
+cwd = os.getcwd()
+runtimepath = Path(os.path.dirname(__file__))
+pathsfile = runtimepath / ".superstatpaths"
+
 
 def is_child(path1, path2):
     try:
@@ -43,31 +49,49 @@ def matches(path1, pathpattern):
     return True
 
 def stat_dir(directory):
-    # proc: subprocess.CompletedProcess = subprocess.run(["git", "diff", "--shortstat"], capture_output=True, cwd=directory, shell=True)
-    proc: subprocess.CompletedProcess = subprocess.run(["git", "status", "--short"], capture_output=True, cwd=directory, shell=True)
+    if not Path(directory).exists():
+        print(" %s: No such directory" % directory)
+        return
+    proc = subprocess.run(["git", "status", "--short"], capture_output=True, cwd=directory, shell=True)
     if proc.stdout:
         print(" %s" % directory)
         for line in proc.stdout.decode().split("\n"):
             print("\t%s" % line)
 
-cwd: str = os.getcwd()
-runtimepath = Path(os.path.dirname(__file__))
-pathsfile = runtimepath / ".superstatpaths"
-pathpatterns = []
-if (pathsfile.exists):
-    for pattern in pathsfile.open("r").read(). split('\n'):
-        if pattern.strip().startswith("#"):
-            continue
-        if pattern:
-            pathpatterns.append(pattern)
-if not pathpatterns:
-    pathpatterns = [cwd + "*"]  # If there are no settings then just look everywhere
+def main():
+    pathpatterns = []
+    if (pathsfile.exists):
+        for pattern in pathsfile.open("r").read(). split('\n'):
+            if pattern.strip().startswith("#"):
+                continue
+            if pattern:
+                pathpatterns.append(pattern)
+    if not pathpatterns:
+        pathpatterns = [cwd + "*"]  # If there are no settings then just look everywhere
+    for pattern in pathpatterns:
+        if pattern.endswith("*"):
+            for path in Path(pattern).parent.glob("**/.git"):
+                if path.is_dir():
+                    stat_dir(str(path.parent))
+        else:
+            stat_dir(pattern)
 
-for pattern in pathpatterns:
-    if pattern.endswith("*"):
-        for path in Path(pattern).parent.glob("**/.git"):
-            if path.is_dir():
-                stat_dir(str(path.parent))
+if __name__ == "__main__":
+    parser = ArgumentParser(description="Stat all the git repos you care about at once")
+    parser.add_argument("-e", "--edit", nargs='?', const="vim", default=None, help="Edit .superstatpaths with program given by [EDIT] or vim default")
+    parser.add_argument("-w", "--where", action="store_true", help="Where is .superstatpaths")
+    parser.add_argument("-s", "--show", action="store_true", help="What's in .superstatpaths")
+    args = parser.parse_args();
+    if args.edit:
+        os.system("%s %s" % ( args.edit, pathsfile))
+        print(args.edit)
+    elif args.where:
+        print("\n")
+        print("\t%s" % pathsfile)
+    elif args.show:
+        with pathsfile.open("r") as inf:
+            print("\n")
+            for path in inf.read().split("\n"):
+                print("\t%s" % path)
     else:
-        stat_dir(pattern)
-
+        main()
